@@ -194,6 +194,16 @@ test('publishing commits the cover first, then the article, and marks it live', 
   assert.equal(w.tables.blog_posts[0].status, 'published');
 });
 
+test('pages chosen in the CRM are sent as link_from, not as related links', async () => {
+  const w = makeWorld();
+  w.tables.blog_posts[0].related = ['free-trial', 'from:pricing', 'from:home', 'from:bad slug'];
+  await call(req('/api/public/blog', { token: 'tok-blogger', body: { id: postId } }));
+  const put = w.log.github.filter((g) => g.method === 'PUT').pop();
+  const article = JSON.parse(Buffer.from(put.body.content, 'base64').toString());
+  assert.deepEqual(article.related, ['free-trial']);
+  assert.deepEqual(article.link_from, ['pricing', 'home']);
+});
+
 test('a web address already used by a built-in article is refused', async () => {
   const w = makeWorld();
   w.tables.blog_posts[0].slug = 'taken-slug';

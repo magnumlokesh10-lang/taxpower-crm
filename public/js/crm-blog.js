@@ -149,6 +149,7 @@
     $("bCoverAlt").value = cur.cover_alt || "";
     renderCover();
     renderRelated();
+    renderLinkFrom();
     renderBlocks();
     refreshHeader();
     refreshCounters();
@@ -386,6 +387,33 @@
   }
   $("bRelated").addEventListener("change", function () { dirty = true; });
 
+  /* pages that get a "Read the guide" card. Saved inside the existing related list as "from:<page>" */
+  var LINK_FROM_OPTIONS = [
+    ["pricing", "Plans & pricing"],
+    ["home", "Home page"],
+    ["downloads", "Downloads"],
+    ["free-trial", "Free trial"],
+    ["taxpowergst", "TaxPower GST"],
+    ["taxpowertds", "TaxPower TDS"],
+    ["taxpower-gst-features", "All GST features"],
+    ["taxpower-tds-features", "All TDS features"],
+    ["support", "Demo & support FAQs"],
+    ["demo-enquiry", "Contact & enquiries"],
+    ["gst-tds-due-dates", "Due dates calendar"]
+  ];
+
+  function renderLinkFrom() {
+    $("bLinkFrom").innerHTML = LINK_FROM_OPTIONS.map(function (o) {
+      return '<label class="crm-check"><input type="checkbox" value="' + esc(o[0]) + '"' +
+        (cur.related.indexOf("from:" + o[0]) !== -1 ? " checked" : "") + " /> " + esc(o[1]) + "</label>";
+    }).join("");
+  }
+  $("bLinkFrom").addEventListener("change", function () { dirty = true; });
+
+  function readLinkFrom() {
+    return Array.prototype.map.call($("bLinkFrom").querySelectorAll("input:checked"), function (i) { return "from:" + i.value; });
+  }
+
   function readRelated() {
     return Array.prototype.map.call($("bRelated").querySelectorAll("input:checked"), function (i) { return i.value; });
   }
@@ -428,7 +456,7 @@
     cur.publish_time = $("bTime").value || "09:00";
     cur.cover_alt = $("bCoverAlt").value.trim();
     cur.blocks = readBlocks();
-    cur.related = readRelated();
+    cur.related = readRelated().concat(readLinkFrom());
   }
 
   function setBusy(on, label) {
@@ -658,6 +686,9 @@
     if (a.time && /^\d{2}:\d{2}$/.test(a.time) && !post.id) post.publish_time = a.time;
     if (!post.cover_alt && a.cover_alt) post.cover_alt = a.cover_alt;
     if (a.related && a.related.length && !post.id) post.related = a.related;
+    if (a.link_from && a.link_from.length) {
+      post.related = (post.related || []).filter(function (x) { return String(x).indexOf("from:") !== 0; }).concat(a.link_from.map(function (x) { return "from:" + x; }));
+    }
     post.slugTouched = !!post.slug;
     closeImport();
     openEditor(post);

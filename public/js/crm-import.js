@@ -600,7 +600,7 @@
       article: {
         title: title, h1: meta.h1 || "", summary: cutAtWord(summary, 400), description: description,
         category: meta.category || "", slug: meta.slug || "", date: meta.date || "", time: meta.time || "",
-        cover_alt: meta.cover_alt || "", blocks: blocks
+        cover_alt: meta.cover_alt || "", blocks: blocks, link_from: meta.link_from || null
       },
       counts: counts,
       warnings: warn
@@ -645,6 +645,7 @@
     if (fm.date || fm.published) m.date = String(fm.date || fm.published).slice(0, 10);
     if (fm.time) m.time = fm.time;
     if (m.slug) m.slug = slugify(m.slug);
+    if (fm.link_from) m.link_from = String(fm.link_from).split(/[,\s]+/).filter(function (x) { return /^[a-z0-9][a-z0-9-]*$/.test(x); });
     return m;
   }
 

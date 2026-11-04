@@ -400,8 +400,10 @@ async function handleBlog(request, env) {
       published: date,
       time,
       blocks: post.blocks,
-      related: post.related || [],
+      related: (post.related || []).filter((x) => !String(x).startsWith('from:')),
     };
+    const linkFrom = (post.related || []).filter((x) => String(x).startsWith('from:')).map((x) => String(x).slice(5)).filter((x) => /^[a-z0-9][a-z0-9-]*$/.test(x));
+    if (linkFrom.length) article.link_from = linkFrom;
     if (coverPath) { article.cover = coverPath; article.cover_alt = post.cover_alt || post.title; }
     await gh.putFile(
       `content/blog/${post.slug}.json`,
