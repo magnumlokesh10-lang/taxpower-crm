@@ -1552,3 +1552,34 @@ body {
 .crm-perm-new legend { padding: 0 8px; font-size: 13px; font-weight: 700; color: var(--crm-text); }
 .crm-perm-new .crm-perm-checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 18px; margin-bottom: 8px; }
 .crm-perm-new label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+
+/* styled dropdowns */
+.crm-dd-native { display: none !important; }
+.crm-dd { display: inline-block; position: relative; vertical-align: middle; }
+.crm-dd-block { display: block; width: 100%; }
+.crm-dd-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-width: 140px; min-height: 42px;
+  font: inherit; font-size: 14px; color: var(--crm-text); background: var(--crm-surface); border: 1px solid var(--crm-border);
+  border-radius: 10px; padding: 10px 12px; cursor: pointer; text-align: left; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.crm-dd-btn::after {
+  content: ""; flex: none; width: 10px; height: 10px; margin-top: -3px; border-right: 2px solid #64748b; border-bottom: 2px solid #64748b;
+  transform: rotate(45deg); transition: transform .15s;
+}
+.crm-dd-btn[aria-expanded="true"]::after { transform: rotate(225deg); margin-top: 3px; }
+.crm-dd-btn:hover { border-color: #cbd5e1; }
+.crm-dd-btn:focus-visible, .crm-dd-btn[aria-expanded="true"] { border-color: var(--crm-brand); box-shadow: 0 0 0 3px rgba(244, 122, 34, .18); }
+.crm-dd-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-dd.is-disabled .crm-dd-btn { opacity: .55; cursor: not-allowed; }
+.crm-dd-sm .crm-dd-btn { min-height: 34px; padding: 4px 10px; font-size: 13px; min-width: 120px; }
+.crm-dd-menu {
+  position: fixed; z-index: 200; margin: 0; padding: 6px; list-style: none; max-height: 280px; overflow-y: auto;
+  background: #fff; border: 1px solid var(--crm-border); border-radius: 12px; box-shadow: 0 16px 40px rgba(15, 23, 42, .18);
+}
+.crm-dd-menu li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-radius: 8px; font-size: 14px; color: var(--crm-text); cursor: pointer; white-space: nowrap; }
+.crm-dd-menu li.is-active { background: var(--crm-brand-soft); }
+.crm-dd-menu li.is-selected { font-weight: 700; color: var(--crm-brand-ink); }
+.crm-dd-menu li.is-selected::after { content: "\2713"; font-weight: 800; }
+.crm-dd-menu li.is-disabled { opacity: .45; cursor: not-allowed; }
+.crm-field .crm-dd, .crm-field .crm-dd-label { font-weight: 400; color: var(--crm-text); }
