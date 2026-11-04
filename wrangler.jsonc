@@ -10,11 +10,12 @@
   },
   "routes": [{ "pattern": "crm.taxpower.co", "custom_domain": true }],
   "vars": {
+    "SUPABASE_URL": "https://kqmgnayihyiqpvqukitg.supabase.co",
     "GITHUB_REPO": "magnumlokesh10-lang/taxpower-update",
     "GITHUB_BRANCH": "main"
   }
   // Add these in Cloudflare -> Settings -> Variables and Secrets (never in this file):
-  //   SUPABASE_URL                 e.g. https://xxxx.supabase.co
+  // (SUPABASE_URL is public and lives in "vars" above, so a Git deploy never wipes it.)
   //   SUPABASE_SERVICE_ROLE_KEY    secret
   //   GITHUB_TOKEN                 secret (Contents: read and write on taxpower-update)
 }
