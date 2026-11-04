@@ -235,7 +235,15 @@ async function handleStaff(request, env) {
     const id = created.data.id;
     await sb.rest('profiles?on_conflict=id', { method: 'POST', body: { id, display_name: clean(body.display_name, 80) }, prefer: 'resolution=merge-duplicates,return=minimal' });
     await sb.rest('user_roles?on_conflict=user_id,role', { method: 'POST', body: { user_id: id, role }, prefer: 'resolution=merge-duplicates,return=minimal' });
-    await upsertPermissions(sb, id, { can_add_leads: role === 'admin', can_edit_leads: true, can_convert_leads: true, can_export: true, can_manage_blog: role === 'admin' });
+    const asked = body.permissions && typeof body.permissions === 'object' ? body.permissions : {};
+    const pick = (key, fallback) => (role === 'admin' ? true : typeof asked[key] === 'boolean' ? asked[key] : fallback);
+    await upsertPermissions(sb, id, {
+      can_add_leads: pick('can_add_leads', false),
+      can_edit_leads: pick('can_edit_leads', true),
+      can_convert_leads: pick('can_convert_leads', true),
+      can_export: pick('can_export', true),
+      can_manage_blog: pick('can_manage_blog', false),
+    });
     return json({ ok: true, id, email, role });
   }
 

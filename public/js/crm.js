@@ -24,6 +24,18 @@
     ["can_manage_blog", "Write and publish blog articles"]
   ];
 
+  var NEW_STAFF_DEFAULTS = { can_add_leads: false, can_edit_leads: true, can_convert_leads: true, can_export: false, can_manage_blog: false };
+
+  function renderNewStaffPerms() {
+    $("staffPermsChecks").innerHTML = PERM_KEYS.map(function (k) {
+      return '<label><input type="checkbox" data-new-perm="' + k[0] + '"' + (NEW_STAFF_DEFAULTS[k[0]] ? " checked" : "") + " /> " + esc(k[1]) + "</label>";
+    }).join("");
+  }
+
+  function syncNewStaffPerms() {
+    $("staffPermsBox").classList.toggle("crm-hidden", $("staffRole").value === "admin");
+  }
+
   function can(key) {
     return state.role === "admin" || !!state.perms[key];
   }
@@ -326,6 +338,10 @@
     $("createStaffStatus").textContent = "Password generated — copy it before creating the login.";
   });
 
+  renderNewStaffPerms();
+  syncNewStaffPerms();
+  $("staffRole").addEventListener("change", syncNewStaffPerms);
+
   $("createStaffForm").addEventListener("submit", function (event) {
     event.preventDefault();
     var status = $("createStaffStatus");
@@ -344,7 +360,12 @@
       email: email,
       password: password,
       display_name: $("staffName").value.trim(),
-      role: $("staffRole").value
+      role: $("staffRole").value,
+      permissions: (function () {
+        var out = {};
+        Array.prototype.forEach.call(document.querySelectorAll("[data-new-perm]"), function (i) { out[i.getAttribute("data-new-perm")] = i.checked; });
+        return out;
+      })()
     }).then(function () {
       status.style.color = "#047857";
       status.textContent = "Login created for " + email + ". Share the password with them.";

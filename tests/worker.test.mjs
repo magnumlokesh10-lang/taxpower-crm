@@ -162,6 +162,16 @@ test('admin can change a role, disable a login and create a user', async () => {
   assert.ok(w.tables.staff_permissions.some((p) => p.user_id === 'new-user'));
 });
 
+test('new staff login gets exactly the permissions the admin ticked', async () => {
+  const w = makeWorld();
+  await call(req('/api/public/staff', { method: 'POST', token: 'tok-admin', body: { email: 'p@x.co', password: 'longenough1', role: 'staff', permissions: { can_add_leads: true, can_edit_leads: false, can_manage_blog: true } } }));
+  const row = w.tables.staff_permissions.find((p) => p.user_id === 'new-user');
+  assert.equal(row.can_add_leads, true);
+  assert.equal(row.can_edit_leads, false);
+  assert.equal(row.can_manage_blog, true);
+  assert.equal(row.can_export, true);
+});
+
 const postId = '11111111-1111-1111-1111-111111111111';
 
 test('blog publishing needs the blog permission', async () => {

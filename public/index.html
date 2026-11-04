@@ -11,7 +11,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="/css/crm.css?v=20261104a" />
+  <link rel="stylesheet" href="/css/crm.css?v=20261104b" />
   <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
@@ -476,6 +476,11 @@
                 </button>
               </span>
             </label>
+            <fieldset class="crm-perm-new" id="staffPermsBox">
+              <legend>What can this staff member do?</legend>
+              <div class="crm-perm-checks" id="staffPermsChecks"></div>
+              <small class="crm-hint">You can change these anytime from &ldquo;Staff permissions&rdquo; below. Administrators can do everything.</small>
+            </fieldset>
             <div class="crm-detail-actions">
               <button type="submit" class="crm-btn crm-btn-primary" id="createStaffBtn">Create login</button>
               <button type="button" class="crm-btn crm-btn-ghost" id="genPasswordBtn">Generate password</button>
@@ -590,10 +595,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="/config.js?v=20261104a"></script>
-  <script src="/js/crm.js?v=20261104a"></script>
-  <script src="/js/crm-import.js?v=20261104a"></script>
-  <script src="/js/crm-blog.js?v=20261104a"></script>
+  <script src="/config.js?v=20261104b"></script>
+  <script src="/js/crm.js?v=20261104b"></script>
+  <script src="/js/crm-import.js?v=20261104b"></script>
+  <script src="/js/crm-blog.js?v=20261104b"></script>
 </body>
 
 </html>
