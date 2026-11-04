@@ -11,7 +11,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="/css/crm.css" />
+  <link rel="stylesheet" href="/css/crm.css?v=20261104a" />
   <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
@@ -250,6 +250,7 @@
               <option value="published">Published</option>
               <option value="draft">Drafts</option>
             </select>
+            <button class="crm-btn crm-btn-ghost" id="blogImportBtn">Import file</button>
             <button class="crm-btn crm-btn-primary" id="blogNewBtn">+ New article</button>
             <span class="crm-count-chip" id="blogCount">0 articles</span>
           </div>
@@ -267,6 +268,7 @@
             <button type="button" class="crm-btn crm-btn-ghost" id="blogBackBtn">&larr; All articles</button>
             <span class="crm-pill" id="blogStatusPill">Draft</span>
             <span class="crm-editor-spacer"></span>
+            <button type="button" class="crm-btn crm-btn-ghost" id="blogEditorImportBtn">Import file</button>
             <button type="button" class="crm-btn crm-btn-ghost" id="blogPreviewBtn">Preview</button>
             <button type="button" class="crm-btn crm-btn-ghost" id="blogSaveBtn">Save draft</button>
             <button type="button" class="crm-btn crm-btn-primary" id="blogPublishBtn">Publish</button>
@@ -293,9 +295,11 @@
                 <div class="crm-block-add" id="blockAdd">
                   <span>Add:</span>
                   <button type="button" class="crm-chip-btn" data-add="h2">Heading</button>
+                  <button type="button" class="crm-chip-btn" data-add="h3">Subheading</button>
                   <button type="button" class="crm-chip-btn" data-add="p">Paragraph</button>
                   <button type="button" class="crm-chip-btn" data-add="steps">Numbered steps</button>
                   <button type="button" class="crm-chip-btn" data-add="list">Bullet list</button>
+                  <button type="button" class="crm-chip-btn" data-add="table">Table</button>
                   <button type="button" class="crm-chip-btn" data-add="faq">FAQ</button>
                   <button type="button" class="crm-chip-btn" data-add="note">Note</button>
                   <button type="button" class="crm-chip-btn" data-add="links">Links</button>
@@ -562,6 +566,22 @@
 
   <div class="crm-toast crm-hidden" id="crmToast" role="status" aria-live="polite"></div>
 
+  <div class="crm-overlay crm-hidden" id="importOverlay"></div>
+  <div class="crm-preview crm-import crm-hidden" id="importModal" role="dialog" aria-modal="true" aria-label="Import an article">
+    <header class="crm-detail-head"><div><h3>Import an article</h3><small>Word, Markdown, HTML, text or JSON. Headings, lists, tables and FAQ are set up for you.</small></div>
+      <button class="crm-icon-btn" id="importClose" aria-label="Close">&times;</button></header>
+    <div class="crm-preview-body">
+      <label class="crm-dropzone" id="importDrop">
+        <input type="file" id="importFile" accept=".docx,.md,.markdown,.txt,.html,.htm,.json,text/plain,text/markdown,text/html,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        <strong>Choose a file</strong><span>or drop it here (.docx, .md, .html, .txt, .json)</span>
+      </label>
+      <p class="crm-import-or">or paste the text from ChatGPT, Claude or any other tool</p>
+      <textarea id="importText" rows="8" placeholder="Paste the article here. Markdown (# headings, - lists, | tables |) works best."></textarea>
+      <p class="crm-detail-status" id="importStatus"></p>
+      <div class="crm-import-actions"><button type="button" class="crm-btn crm-btn-primary" id="importGo">Import pasted text</button></div>
+    </div>
+  </div>
+
   <div class="crm-overlay crm-hidden" id="previewOverlay"></div>
   <div class="crm-preview crm-hidden" id="previewModal" role="dialog" aria-modal="true" aria-label="Article preview">
     <header class="crm-detail-head"><div><h3>Preview</h3><small>This is how the article will read on the website</small></div>
@@ -570,9 +590,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="/config.js"></script>
-  <script src="/js/crm.js"></script>
-  <script src="/js/crm-blog.js"></script>
+  <script src="/config.js?v=20261104a"></script>
+  <script src="/js/crm.js?v=20261104a"></script>
+  <script src="/js/crm-import.js?v=20261104a"></script>
+  <script src="/js/crm-blog.js?v=20261104a"></script>
 </body>
 
 </html>

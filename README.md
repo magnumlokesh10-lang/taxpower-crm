@@ -51,3 +51,9 @@ Blog -> New article -> Preview -> Publish (live in about 2 minutes).
 
 ## Local checks
 `node --test tests/` runs the server tests. To look at the screens, serve `public/` with any static server.
+
+## Importing articles
+
+In **Blog** click **Import file** (or **Import file** inside an open article). Upload a Word (.docx), Markdown, HTML, text or JSON file, or paste text from any AI tool. Headings, bullet and numbered lists, tables, notes and FAQ sections are converted into blocks automatically. Add the cover image, check the title and description, then Publish.
+
+Inside paragraphs, list items, table cells and FAQ answers you can use `**bold**`, `*italic*` and `[text](page-name)` links.

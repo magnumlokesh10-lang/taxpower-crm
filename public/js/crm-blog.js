@@ -26,7 +26,7 @@
   ];
 
   var BLOCK_LABEL = {
-    h2: "Heading", p: "Paragraph", steps: "Numbered steps", list: "Bullet list",
+    h2: "Heading", h3: "Subheading", table: "Table", p: "Paragraph", steps: "Numbered steps", list: "Bullet list",
     faq: "Frequently asked questions", note: "Note", links: "Links"
   };
 
@@ -62,7 +62,7 @@
 
   function wordCount(blocks) {
     return blocks.reduce(function (n, b) {
-      var text = typeof b.v === "string" ? b.v : JSON.stringify(b.v || "");
+      var text = b.t === "table" ? JSON.stringify([b.head, b.rows]) : typeof b.v === "string" ? b.v : JSON.stringify(b.v || "");
       return n + (text.match(/[A-Za-z0-9ऀ-ॿ]+/g) || []).length;
     }, 0);
   }
@@ -203,10 +203,14 @@
 
   function blockHtml(b, i) {
     var body = "";
-    if (b.t === "h2") {
-      body = '<input type="text" class="b-v" maxlength="160" placeholder="Section heading" value="' + esc(b.v || "") + '" />';
+    if (b.t === "h2" || b.t === "h3") {
+      body = '<input type="text" class="b-v" maxlength="160" placeholder="' + (b.t === "h3" ? "Subheading" : "Section heading") + '" value="' + esc(b.v || "") + '" />';
     } else if (b.t === "p" || b.t === "note") {
-      body = '<textarea class="b-v" rows="5" placeholder="' + (b.t === "note" ? "A short note or reminder" : "Write the paragraph here") + '">' + esc(b.v || "") + "</textarea>";
+      body = '<textarea class="b-v" rows="5" placeholder="' + (b.t === "note" ? "A short note or reminder" : "Write the paragraph here") + '">' + esc(b.v || "") + "</textarea>" +
+        '<small class="crm-hint">Tip: **bold**, *italic* and [link text](page-name) work here.</small>';
+    } else if (b.t === "table") {
+      body = '<textarea class="b-v b-table" rows="6" wrap="off" placeholder="Plan | Price | Best for&#10;Basic | Rs 1,000 | Small shops">' + esc(tableToText(b)) + "</textarea>" +
+        '<small class="crm-hint">One row per line, columns separated by <b>|</b>. The first line is the heading row.</small>';
     } else if (b.t === "steps" || b.t === "list") {
       body = '<textarea class="b-v" rows="5" placeholder="One item per line">' + esc((b.v || []).join("\n")) + "</textarea>" +
         '<small class="crm-hint">One ' + (b.t === "steps" ? "step" : "point") + " per line.</small>";
@@ -226,6 +230,22 @@
       '<div class="crm-block-body">' + body + "</div></div>";
   }
 
+  function tableToText(b) {
+    var rows = [(b.head || [])].concat(b.rows || []);
+    return rows.map(function (r) { return r.join(" | "); }).join("\n");
+  }
+
+  function textToTable(text) {
+    var rows = String(text || "").split("\n").map(function (l) { return l.trim(); }).filter(function (l) {
+      return l && !/^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$/.test(l);
+    }).map(function (l) {
+      return l.replace(/^\|/, "").replace(/\|$/, "").split("|").map(function (c) { return c.trim(); });
+    });
+    var cols = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+    rows = rows.map(function (r) { while (r.length < cols) r.push(""); return r; });
+    return { head: rows[0] || [], rows: rows.slice(1) };
+  }
+
   function faqItemHtml(f) {
     return '<div class="b-faq"><input type="text" class="b-q" maxlength="300" placeholder="Question" value="' + esc(f.q || "") +
       '" /><textarea class="b-a" rows="3" placeholder="Answer">' + esc(f.a || "") + '</textarea>' +
@@ -242,7 +262,12 @@
     Array.prototype.forEach.call($("blockList").querySelectorAll(".crm-block"), function (el) {
       var t = el.getAttribute("data-type");
       var v;
-      if (t === "h2") v = el.querySelector(".b-v").value.trim();
+      if (t === "table") {
+        var tb = textToTable(el.querySelector(".b-v").value);
+        out.push({ t: "table", head: tb.head, rows: tb.rows });
+        return;
+      }
+      if (t === "h2" || t === "h3") v = el.querySelector(".b-v").value.trim();
       else if (t === "p" || t === "note") v = el.querySelector(".b-v").value.trim();
       else if (t === "steps" || t === "list") {
         v = el.querySelector(".b-v").value.split("\n").map(function (x) { return x.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "").trim(); })
@@ -269,7 +294,7 @@
     if (!btn) return;
     cur.blocks = readBlocks();
     var t = btn.getAttribute("data-add");
-    cur.blocks.push({ t: t, v: t === "h2" || t === "p" || t === "note" ? "" : [] });
+    cur.blocks.push(t === "table" ? { t: "table", head: ["", ""], rows: [["", ""]] } : { t: t, v: t === "h2" || t === "h3" || t === "p" || t === "note" ? "" : [] });
     dirty = true;
     renderBlocks();
     var last = $("blockList").lastElementChild;
@@ -523,6 +548,11 @@
 
   /* ---------------- preview ---------------- */
 
+  function rich(text) {
+    return esc(text).replace(/\[([^\]\n]{1,160})\]\(([^)\s]{1,300})\)/g, "<u>$1</u>")
+      .replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*\w])\*([^*\n]+?)\*(?![*\w])/g, "$1<em>$2</em>");
+  }
+
   function previewHtml() {
     collect();
     var out = '<article class="crm-prev">';
@@ -533,13 +563,18 @@
     if (cur.summary || cur.description) out += '<p class="crm-prev-lead">' + esc(cur.summary || cur.description) + "</p>";
     cur.blocks.forEach(function (b) {
       if (b.t === "h2" && b.v) out += "<h2>" + esc(b.v) + "</h2>";
-      else if (b.t === "p" && b.v) out += "<p>" + esc(b.v) + "</p>";
-      else if (b.t === "note" && b.v) out += '<p class="crm-prev-note">' + esc(b.v) + "</p>";
-      else if (b.t === "steps" && b.v.length) out += "<ol>" + b.v.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ol>";
-      else if (b.t === "list" && b.v.length) out += "<ul>" + b.v.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
+      else if (b.t === "h3" && b.v) out += "<h3>" + esc(b.v) + "</h3>";
+      else if (b.t === "p" && b.v) out += "<p>" + rich(b.v) + "</p>";
+      else if (b.t === "note" && b.v) out += '<p class="crm-prev-note">' + rich(b.v) + "</p>";
+      else if (b.t === "table" && b.head && b.head.length) {
+        out += "<table><thead><tr>" + b.head.map(function (h) { return "<th>" + rich(h) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+          b.rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + rich(c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table>";
+      }
+      else if (b.t === "steps" && b.v.length) out += "<ol>" + b.v.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("") + "</ol>";
+      else if (b.t === "list" && b.v.length) out += "<ul>" + b.v.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("") + "</ul>";
       else if (b.t === "faq" && b.v.length) {
         out += "<h2>Frequently asked questions</h2>" + b.v.map(function (f) {
-          return "<h3>" + esc(f.q) + "</h3><p>" + esc(f.a) + "</p>";
+          return "<h3>" + esc(f.q) + "</h3><p>" + rich(f.a) + "</p>";
         }).join("");
       } else if (b.t === "links" && b.v.length) {
         out += '<p class="crm-prev-links">' + b.v.map(function (l) { return "<span>" + esc(l[0]) + " &rarr;</span>"; }).join("") + "</p>";
@@ -562,6 +597,106 @@
 
   window.addEventListener("beforeunload", function (e) {
     if (dirty && cur) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  /* ---------------- import ---------------- */
+
+  var importTarget = "new";      // "new" = start a new article, "editor" = fill the open one
+
+  function openImport(target) {
+    importTarget = target;
+    $("importText").value = "";
+    $("importStatus").textContent = "";
+    $("importModal").classList.remove("crm-hidden");
+    $("importOverlay").classList.remove("crm-hidden");
+  }
+  function closeImport() {
+    $("importModal").classList.add("crm-hidden");
+    $("importOverlay").classList.add("crm-hidden");
+  }
+  function importMsg(text, bad) {
+    var el = $("importStatus");
+    el.style.color = bad ? "#b91c1c" : "#047857";
+    el.textContent = text || "";
+  }
+
+  function summaryOf(r) {
+    var c = r.counts, parts = [];
+    if (c.h) parts.push(c.h + (c.h === 1 ? " heading" : " headings"));
+    if (c.p) parts.push(c.p + (c.p === 1 ? " paragraph" : " paragraphs"));
+    if (c.list) parts.push(c.list + (c.list === 1 ? " bullet list" : " bullet lists"));
+    if (c.steps) parts.push(c.steps + (c.steps === 1 ? " numbered list" : " numbered lists"));
+    if (c.table) parts.push(c.table + (c.table === 1 ? " table" : " tables"));
+    if (c.note) parts.push(c.note + (c.note === 1 ? " note" : " notes"));
+    if (c.faq) parts.push("FAQ with " + c.faqQ + (c.faqQ === 1 ? " question" : " questions"));
+    return parts.join(", ");
+  }
+
+  function applyImport(r) {
+    var a = r.article;
+    if (!a.blocks.length) { importMsg("No readable content was found in this file.", true); return; }
+    var post;
+    if (importTarget === "editor" && cur) {
+      collect();
+      var hasBody = cur.blocks.some(function (b) { return (typeof b.v === "string" && b.v.trim()) || (Array.isArray(b.v) && b.v.length) || b.t === "table"; });
+      var replace = true;
+      if (hasBody) replace = window.confirm("Replace the current article body with the imported content?\n\nOK = replace, Cancel = add the imported content at the end.");
+      post = cur;
+      post.blocks = replace ? a.blocks : post.blocks.concat(a.blocks);
+    } else {
+      post = emptyPost();
+      post.blocks = a.blocks;
+    }
+    /* only fill fields that are still empty, so nothing already typed is lost */
+    if (!post.title && a.title) post.title = a.title;
+    if (!post.h1 && a.h1) post.h1 = a.h1;
+    if (!post.summary && a.summary) post.summary = a.summary;
+    if (!post.description && a.description) post.description = a.description;
+    if (a.category && ["Guide", "GST", "TDS", "Product update", "News"].indexOf(a.category) !== -1 && (importTarget === "new" || !post.id)) post.category = a.category;
+    if (!post.slug && post.status !== "published") post.slug = a.slug || slugify(post.title);
+    if (a.date && /^\d{4}-\d{2}-\d{2}$/.test(a.date) && !post.id) post.publish_date = a.date;
+    if (a.time && /^\d{2}:\d{2}$/.test(a.time) && !post.id) post.publish_time = a.time;
+    if (!post.cover_alt && a.cover_alt) post.cover_alt = a.cover_alt;
+    if (a.related && a.related.length && !post.id) post.related = a.related;
+    post.slugTouched = !!post.slug;
+    closeImport();
+    openEditor(post);
+    dirty = true;
+    var msg = "Imported: " + summaryOf(r) + ".";
+    if (r.warnings.length) msg += " " + r.warnings.join(" ");
+    msg += " Now add the cover image, check the title and description, and Publish.";
+    status(msg, r.warnings.length > 0);
+    toast("Article imported. Please review it before publishing.", "success");
+  }
+
+  function runImport(promise) {
+    importMsg("Reading the file...");
+    promise.then(applyImport).catch(function (e) { importMsg(e.message || "Could not read that file.", true); });
+  }
+
+  $("blogImportBtn").addEventListener("click", function () { openImport("new"); });
+  $("blogEditorImportBtn").addEventListener("click", function () { openImport("editor"); });
+  $("importClose").addEventListener("click", closeImport);
+  $("importOverlay").addEventListener("click", closeImport);
+  $("importFile").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    this.value = "";
+    if (f) runImport(window.CRM_IMPORT.fromFile(f));
+  });
+  $("importGo").addEventListener("click", function () {
+    var text = $("importText").value;
+    if (!text.trim()) { importMsg("Paste the article text first, or choose a file.", true); return; }
+    runImport(new Promise(function (resolve) { resolve(window.CRM_IMPORT.fromText(text)); }));
+  });
+  ["dragenter", "dragover"].forEach(function (ev) {
+    $("importDrop").addEventListener(ev, function (e) { e.preventDefault(); this.classList.add("is-over"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    $("importDrop").addEventListener(ev, function (e) { e.preventDefault(); this.classList.remove("is-over"); });
+  });
+  $("importDrop").addEventListener("drop", function (e) {
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) runImport(window.CRM_IMPORT.fromFile(f));
   });
 
   /* ---------------- register ---------------- */
